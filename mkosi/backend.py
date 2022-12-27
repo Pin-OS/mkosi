@@ -496,6 +496,7 @@ class MkosiConfig:
     image_id: Optional[str]
     hostname: Optional[str]
     no_chown: bool
+    idmap: bool
     tar_strip_selinux_context: bool
     incremental: bool
     minimize: bool

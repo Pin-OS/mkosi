@@ -2308,13 +2308,24 @@ def centos_variant_repos(config: MkosiConfig, epel_release: int) -> List[Repo]:
         appstream_url = f"baseurl={config.mirror}/{directory}/{config.release}/AppStream/$basearch/os"
         baseos_url = f"baseurl={config.mirror}/{directory}/{config.release}/BaseOS/$basearch/os"
         extras_url = f"baseurl={config.mirror}/{directory}/{config.release}/extras/$basearch/os"
-        powertools_url = f"baseurl={config.mirror}/{directory}/{config.release}/PowerTools/$basearch/os"
+        if epel_release >= 9:
+            crb_url = f"baseurl={config.mirror}/{directory}/{config.release}/CRB/$basearch/os"
+            powertools_url = None
+        else:
+            crb_url = None
+            powertools_url = f"baseurl={config.mirror}/{directory}/{config.release}/PowerTools/$basearch/os"
         epel_url = f"baseurl={config.mirror}/epel/{epel_release}/Everything/$basearch"
     else:
         appstream_url = f"mirrorlist={centos_variant_mirror_repo_url(config, 'AppStream')}"
         baseos_url = f"mirrorlist={centos_variant_mirror_repo_url(config, 'BaseOS')}"
         extras_url = f"mirrorlist={centos_variant_mirror_repo_url(config, 'extras')}"
         powertools_url = f"mirrorlist={centos_variant_mirror_repo_url(config, 'PowerTools')}"
+        if epel_release >= 9:
+            crb_url = f"mirrorlist={centos_variant_mirror_repo_url(config, 'CRB')}"
+            powertools_url = None
+        else:
+            crb_url = None
+            powertools_url = f"mirrorlist={centos_variant_mirror_repo_url(config, 'PowerTools')}"
         epel_url = f"mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=epel-{epel_release}&arch=$basearch"
 
     repos = [Repo("AppStream", appstream_url, gpgpath, gpgurl)]
@@ -2324,6 +2335,8 @@ def centos_variant_repos(config: MkosiConfig, epel_release: int) -> List[Repo]:
         repos += [Repo("extras", extras_url, gpgpath, gpgurl)]
     if powertools_url is not None:
         repos += [Repo("PowerTools", powertools_url, gpgpath, gpgurl)]
+    if crb_url is not None:
+        repos += [Repo("CRB", crb_url, gpgpath, gpgurl)]
     if epel_url is not None and is_epel_variant(config.distribution):
         repos += [Repo("epel", epel_url, epel_gpgpath, epel_gpgurl)]
 
@@ -3148,6 +3161,20 @@ def configure_serial_terminal(state: MkosiState, cached: bool) -> None:
                           """)
 
 
+def nspawn_id_map_supported() -> bool:
+    if nspawn_version() < 252:
+        return False
+
+    try:
+        # Not part of stdlib
+        from packaging import version
+    except ImportError:
+        # If we can't check assume the kernel is new enough
+        return True
+
+    return version.parse(platform.release()) >= version.parse("5.12")
+
+
 def nspawn_params_for_build_sources(config: MkosiConfig, sft: SourceFileTransfer) -> List[str]:
     params = []
 
@@ -3155,7 +3182,7 @@ def nspawn_params_for_build_sources(config: MkosiConfig, sft: SourceFileTransfer
         params += ["--setenv=SRCDIR=/root/src",
                    "--chdir=/root/src"]
         if sft == SourceFileTransfer.mount:
-            idmap_opt = ":rootidmap" if nspawn_version() >= 252 else ""
+            idmap_opt = ":rootidmap" if nspawn_id_map_supported() and config.idmap else ""
             params += [f"--bind={config.build_sources}:/root/src{idmap_opt}"]
 
         if config.read_only:
@@ -5341,6 +5368,13 @@ def create_parser() -> ArgumentParserMkosi:
         help="When running with sudo, disable reassignment of ownership of the generated files to the original user",
     )  # NOQA: E501
     group.add_argument(
+        "--idmap",
+        metavar="BOOL",
+        action=BooleanAction,
+        default=True,
+        help="Use systemd-nspawn's rootidmap option for bind-mounted directories.",
+    )
+    group.add_argument(
         "--tar-strip-selinux-context",
         metavar="BOOL",
         action=BooleanAction,
@@ -7381,7 +7415,7 @@ def run_build_script(state: MkosiState, raw: Optional[BinaryIO]) -> None:
     if state.config.build_script is None:
         return
 
-    idmap_opt = ":rootidmap" if nspawn_version() >= 252 else ""
+    idmap_opt = ":rootidmap" if nspawn_id_map_supported() and config.idmap else ""
 
     with complete_step("Running build script…"):
         os.makedirs(install_dir(state), mode=0o755, exist_ok=True)
