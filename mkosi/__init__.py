@@ -7415,7 +7415,7 @@ def run_build_script(state: MkosiState, raw: Optional[BinaryIO]) -> None:
     if state.config.build_script is None:
         return
 
-    idmap_opt = ":rootidmap" if nspawn_id_map_supported() and config.idmap else ""
+    idmap_opt = ":rootidmap" if nspawn_id_map_supported() and state.config.idmap else ""
 
     with complete_step("Running build script…"):
         os.makedirs(install_dir(state), mode=0o755, exist_ok=True)
