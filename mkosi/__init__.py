@@ -5765,6 +5765,12 @@ def create_parser() -> ArgumentParserMkosi:
         help="Configure guest's SMP settings",
     )
     group.add_argument(
+        "--qemu-cpu",
+        metavar="CPU",
+        default="all",
+        help="Configure guest's CPU model",
+    )
+    group.add_argument(
         "--qemu-mem",
         metavar="MEM",
         default="1G",
@@ -7940,7 +7946,7 @@ def run_qemu_setup(config: MkosiConfig) -> Iterator[List[str]]:
         "virtio-rng-pci,rng=rng0,id=rng-device0",
     ]
 
-    cmdline += ["-cpu", "all"]
+    cmdline += ["-cpu", config.qemu_cpu]
 
     if config.qemu_headless:
         # -nodefaults removes the default CDROM device which avoids an error message during boot

@@ -572,6 +572,7 @@ class MkosiConfig:
     # QEMU-specific options
     qemu_headless: bool
     qemu_smp: str
+    qemu_cpu: str
     qemu_mem: str
     qemu_kvm: bool
     qemu_args: Sequence[str]

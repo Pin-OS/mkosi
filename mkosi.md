@@ -1135,6 +1135,11 @@ a machine ID.
 : When used with the `qemu` verb, this options sets `qemu`'s `-smp`
   argument which controls the number of guest's CPUs. Defaults to `2`.
 
+`QemuCpu=`, `--qemu-cpu=`
+
+: When used with the `qemu` verb, this options sets `qemu`'s `-cpu`
+  argument which controls the model of guest's CPUs. Defaults to `all`.
+
 `QemuMem=`, `--qemu-mem=`
 
 : When used with the `qemu` verb, this options sets `qemu`'s `-m`
