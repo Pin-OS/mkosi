@@ -328,6 +328,7 @@ class PartitionTable:
     last_partition_sector: Optional[int] = None
     sector_size: int = 512
     first_lba: Optional[int] = None
+    disk_padding: int = 0
 
     grain: int = 4096
 
@@ -367,7 +368,7 @@ class PartitionTable:
         return (1 + pea_sectors) * self.sector_size
 
     def disk_size(self) -> int:
-        return roundup(self.last_partition_offset() + self.footer_size(), self.grain)
+        return roundup(self.last_partition_offset() + self.footer_size() + self.disk_padding, self.grain)
 
     def add(self,
             ident: PartitionIdentifier,
@@ -502,6 +503,7 @@ class MkosiConfig:
     minimize: bool
     with_unified_kernel_images: bool
     gpt_first_lba: Optional[int]
+    disk_padding: Optional[int]
     hostonly_initrd: bool
     cache_initrd: bool
     base_packages: Union[str, bool]

@@ -782,7 +782,7 @@ def initialize_partition_table(state: MkosiState, force: bool = False) -> None:
     if not state.config.output_format.is_disk():
         return
 
-    table = PartitionTable(first_lba=state.config.gpt_first_lba)
+    table = PartitionTable(first_lba=state.config.gpt_first_lba, disk_padding=state.config.disk_padding)
     no_btrfs = state.config.output_format != OutputFormat.gpt_btrfs
 
     for condition, label, size, type_uuid, name, read_only in (
@@ -5414,6 +5414,9 @@ def create_parser() -> ArgumentParserMkosi:
         help="Enable dracut hostonly option",
     )
     group.add_argument(
+        "--disk-padding", help="Add bytes to the disk image", metavar="BYTES"
+    )
+    group.add_argument(
         "--cache-initrd",
         metavar="BOOL",
         action=BooleanAction,
@@ -6690,6 +6693,7 @@ def load_args(args: argparse.Namespace) -> MkosiConfig:
         for i in range(len(args.skeleton_trees)):
             args.skeleton_trees[i] = args.skeleton_trees[i].absolute()
 
+    args.disk_padding = parse_bytes(args.disk_padding)
     args.root_size = parse_bytes(args.root_size)
     args.home_size = parse_bytes(args.home_size)
     args.srv_size = parse_bytes(args.srv_size)
@@ -7936,7 +7940,7 @@ def run_qemu_setup(config: MkosiConfig) -> Iterator[List[str]]:
         "virtio-rng-pci,rng=rng0,id=rng-device0",
     ]
 
-    cmdline += ["-cpu", "max"]
+    cmdline += ["-cpu", "all"]
 
     if config.qemu_headless:
         # -nodefaults removes the default CDROM device which avoids an error message during boot

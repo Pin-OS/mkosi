@@ -378,6 +378,13 @@ a boolean argument: either "1", "yes", or "true" to enable, or "0",
   system), `gpt_squashfs` (similar, but with a squashfs file system),
   `plain_squashfs` (a plain squashfs file system without a partition table).
 
+`DiskPadding=`, `--disk-padding=`
+
+: Takes a size in bytes for the resulting disk image to pad. The specified 
+  numeric value may be suffixed with K, M, G to indicate kilo-, mega- and 
+  gigabytes (all to the base of 1024). This applies to output formats 
+  gpt_ext4, gpt_xfs, gpt_btrfs. Defaults to 0.
+
 `ManifestFormat=`, `--manifest-format=`
 
 : The manifest format type or types to generate. A comma-delimited
